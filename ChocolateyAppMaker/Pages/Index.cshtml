@@ -1,0 +1,148 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Управление программами";
+}
+
+<div class="container py-4">
+    <!-- Шапка + Поиск -->
+    <div class="row align-items-center mb-4 g-3">
+        <div class="col-md-4">
+            <h1 class="h3 mb-0"><i class="bi bi-gear-wide-connected"></i> Администрирование</h1>
+        </div>
+
+        <!-- БЛОК ПОИСКА -->
+        <div class="col-md-5">
+            <form method="get" class="d-flex">
+                <div class="input-group">
+                    <!-- ИСПРАВЛЕНИЕ 1: Убрал bg-white, добавил bg-body-tertiary -->
+                    <span class="input-group-text bg-body-tertiary border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" name="SearchTerm" value="@Model.SearchTerm"
+                           class="form-control border-start-0 ps-0"
+                           placeholder="Поиск по названию, ID или тегу..." />
+                    <button class="btn btn-outline-primary" type="submit">Найти</button>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                {
+                    <a asp-page="./Index" class="btn btn-link text-danger ms-2" title="Сбросить"><i class="bi bi-x-lg"></i></a>
+                }
+            </form>
+        </div>
+
+        <div class="col-md-3 text-md-end">
+            <a asp-page="/Scan" class="btn btn-primary w-100"><i class="bi bi-folder2-open me-2"></i> Сканировать</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <!-- ИСПРАВЛЕНИЕ 2: bg-light -> bg-body-tertiary (Адаптивный фон шапки) -->
+        <div class="card-header bg-body-tertiary d-flex justify-content-between align-items-center">
+            <span class="text-muted small text-uppercase fw-bold">Список пакетов</span>
+            <span class="badge bg-secondary">Всего: @Model.Profiles.TotalCount</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-0">
+                @foreach (var item in Model.Profiles.Items)
+                {
+                    <div class="col border-end border-bottom border-secondary border-opacity-10">
+                        <!-- Класс для ховера -->
+                        <div class="p-3 h-100 d-flex flex-column position-relative hover-adaptive group-hover-trigger">
+                            <div class="d-flex align-items-start mb-2">
+                                <!-- Иконка с адаптивным фоном -->
+                                <img src="@item.DisplayIconUrl" class="rounded me-3 bg-body-secondary shadow-sm p-1"
+                                     style="width: 48px; height: 48px; object-fit: contain;"
+                                     onerror="this.src='/images/no-icon.svg'" />
+                                <div class="overflow-hidden">
+                                    <h6 class="mb-1 fw-bold text-truncate" title="@item.Name">@item.Name</h6>
+                                    <small class="text-muted d-block text-truncate font-monospace" style="font-size: 0.75rem;">
+                                        @(item.ChocolateyId ?? "no-id")
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- БЛОК ТЕГОВ -->
+                            <div class="mb-2" style="min-height: 24px;">
+                                @if (!string.IsNullOrEmpty(item.Tags))
+                                {
+                                    foreach (var tag in item.Tags.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries).Take(3))
+                                    {
+                                        // ИСПРАВЛЕНИЕ: bg-light -> bg-secondary bg-opacity-10 (полупрозрачный фон)
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-opacity-10 fw-normal me-1" style="font-size: 0.65rem;">@tag</span>
+                                    }
+                                }
+                            </div>
+
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <span class="small text-muted">
+                                    <i class="bi bi-hdd-stack"></i> @item.Installers.Count версий
+                                </span>
+                                <a asp-page="/Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary stretched-link py-0">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (Model.Profiles.TotalCount == 0)
+            {
+                <div class="text-center py-5">
+                    <p class="text-muted">Ничего не найдено по запросу "@Model.SearchTerm"</p>
+                    <a asp-page="./Index" class="btn btn-sm btn-outline-secondary">Сбросить фильтр</a>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (Model.Profiles.TotalPages > 1)
+    {
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(!Model.Profiles.HasPreviousPage ? "disabled" : "")">
+                    <a class="page-link" asp-page="./Index"
+                       asp-route-p="@(Model.Profiles.PageIndex - 1)"
+                       asp-route-SearchTerm="@Model.SearchTerm">Назад</a>
+                </li>
+
+                @for (int i = 1; i <= Model.Profiles.TotalPages; i++)
+                {
+                    if (i == 1 || i == Model.Profiles.TotalPages || Math.Abs(Model.Profiles.PageIndex - i) < 3)
+                    {
+                        <li class="page-item @(i == Model.Profiles.PageIndex ? "active" : "")">
+                            <a class="page-link" asp-page="./Index"
+                               asp-route-p="@i"
+                               asp-route-SearchTerm="@Model.SearchTerm">@i</a>
+                        </li>
+                    }
+                }
+
+                <li class="page-item @(!Model.Profiles.HasNextPage ? "disabled" : "")">
+                    <a class="page-link" asp-page="./Index"
+                       asp-route-p="@(Model.Profiles.PageIndex + 1)"
+                       asp-route-SearchTerm="@Model.SearchTerm">Вперед</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+<style>
+    /*
+           ИСПРАВЛЕНИЕ 3: Адаптивный CSS для наведения.
+           Вместо жесткого цвета мы используем RGBA с малым значением прозрачности.
+           --bs-body-color-rgb - это переменная Bootstrap:
+             - в светлой теме она (0, 0, 0) -> черный -> 5% черного = светло-серый
+             - в темной теме она (255, 255, 255) -> белый -> 5% белого = чуть светлее фона
+        */
+    .hover-adaptive:hover {
+        background-color: rgba(var(--bs-body-color-rgb), 0.05);
+        transition: background-color 0.2s ease;
+    }
+
+    /* Доп фикс для границ в темной теме, чтобы не сливались */
+    [data-bs-theme="dark"] .border-end,
+    [data-bs-theme="dark"] .border-bottom {
+        border-color: rgba(255,255,255, 0.1) !important;
+    }
+</style>

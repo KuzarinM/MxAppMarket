@@ -1,0 +1,123 @@
+﻿@page
+@model ChocolateyAppMaker.Pages.Account.ProfileModel
+@{
+    ViewData["Title"] = "Личный кабинет";
+}
+
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold"><i class="bi bi-person-badge text-primary"></i> Мой профиль</h2>
+            <p class="text-muted">Управление учетной записью @Model.CurrentUserName</p>
+        </div>
+    </div>
+
+    <!-- Сообщения об успехе/ошибке -->
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["Message"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!ModelState.IsValid)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> Пожалуйста, исправьте ошибки в форме.
+            <div asp-validation-summary="All" class="small mt-2"></div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+
+        <!-- Карточка 1: Изменение Логина -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-white fw-bold py-3">
+                    <i class="bi bi-person-gear me-2"></i> Основная информация
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="ChangeName">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small text-uppercase">Текущий логин</label>
+                            <input type="text" class="form-control bg-light" value="@Model.CurrentUserName" readonly />
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.NewUserName" class="form-label fw-bold">Новый логин</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input asp-for="Input.NewUserName" class="form-control" placeholder="Введите новый логин" />
+                            </div>
+                            <span asp-validation-for="Input.NewUserName" class="text-danger small"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            Сохранить логин
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Карточка 2: Смена Пароля -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-white fw-bold py-3 text-danger">
+                    <i class="bi bi-shield-lock me-2"></i> Безопасность
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="ChangePassword">
+                        <div class="mb-3">
+                            <label asp-for="Input.OldPassword" class="form-label fw-bold">Текущий пароль</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                <input asp-for="Input.OldPassword" class="form-control" placeholder="********" />
+                            </div>
+                            <span asp-validation-for="Input.OldPassword" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.NewPassword" class="form-label fw-bold">Новый пароль</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                <input asp-for="Input.NewPassword" class="form-control" placeholder="Минимум 4 символа" />
+                            </div>
+                            <span asp-validation-for="Input.NewPassword" class="text-danger small"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-danger">
+                            Обновить пароль
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Инфо блок -->
+        <div class="col-12">
+            <div class="card bg-light border-0">
+                <div class="card-body d-flex align-items-center">
+                    <i class="bi bi-info-circle text-info fs-4 me-3"></i>
+                    <div>
+                        <h6 class="mb-0 fw-bold">Роль в системе</h6>
+                        <span class="text-muted small">
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <span>Администратор (Полный доступ)</span>
+                            }
+                            else
+                            {
+
+                                <span>Пользователь (Доступ только к каталогу)</span>
+                            }
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

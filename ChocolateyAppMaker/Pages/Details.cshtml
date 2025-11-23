@@ -1,0 +1,430 @@
+﻿@page "{id:int}"
+@model DetailsModel
+@{
+    ViewData["Title"] = Model.Profile.Name;
+}
+
+<div class="container-fluid px-4 py-4">
+
+    <!-- БЛОК 1: Шапка (Логотип + Форма + Импорт) -->
+    <div class="container-fluid px-4 py-4">
+
+        <!-- БЛОК 1: Шапка (Логотип + Форма + Импорт) -->
+        <div class="row g-4 mb-5">
+
+            <!-- 1. ЛЕВАЯ КОЛОНКА: ЛОГОТИП И ЗАГРУЗКА -->
+            <div class="col-lg-3">
+                <div class="card shadow border-0 bg-white h-100 sticky-top" style="top: 80px; z-index: 1;">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center text-center p-4">
+
+                        <!-- Логотип с кнопкой изменения -->
+                        <div class="position-relative mb-3 group-hover-trigger" style="width: 100%; max-width: 240px;">
+                            <img src="@Model.Profile.DisplayIconUrl"
+                                 id="mainLogoImage"
+                                 class="img-fluid rounded shadow-sm"
+                                 style="width: 100%; height: auto; object-fit: contain;"
+                                 onerror="this.src='/images/no-icon.svg'" />
+
+                            <!-- Кнопка загрузки (появляется при наведении) -->
+                            <form method="post" enctype="multipart/form-data" asp-page-handler="UploadIcon"
+                                  class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50 rounded opacity-0 hover-show transition-base">
+                                <input type="hidden" asp-for="Profile.Id" />
+                                <label class="btn btn-light btn-sm shadow fw-bold cursor-pointer">
+                                    <i class="bi bi-camera-fill me-2"></i>Изменить
+                                    <input asp-for="UploadIcon" type="file" class="d-none" onchange="this.form.submit()" accept="image/*" />
+                                </label>
+                            </form>
+                        </div>
+
+                        <h5 class="card-title text-primary fw-bold text-break">@Model.Profile.Name</h5>
+                        <span class="badge bg-secondary mb-2 text-break">@Model.Profile.ChocolateyId</span>
+                    </div>
+                </div>
+            </div>
+            <!-- ^^^ ВАЖНО: Вот этот закрывающий div скорее всего потерялся ^^^ -->
+            <!-- 2. ЦЕНТРАЛЬНАЯ КОЛОНКА: РЕДАКТОР -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm h-100 border-0">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="bi bi-pencil-square me-2 text-primary"></i>Редактирование
+                        </h5>
+
+                        <!-- КНОПКА СКАНИРОВАНИЯ -->
+                        @if (Model.Profile.Installers.Any())
+                        {
+                            <form method="post" asp-page-handler="Rescan">
+                                <input type="hidden" asp-for="Profile.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-secondary my-auto ms-1"
+                                        title="Сканировать папку этой программы на наличие изменений">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Обновить файлы
+                                </button>
+                            </form>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <form method="post" asp-page-handler="UpdateMetadata">
+                            <input type="hidden" asp-for="Profile.Id" />
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">НАЗВАНИЕ ПРОГРАММЫ</label>
+                                <input asp-for="Profile.Name" class="form-control form-control-lg fw-bold" />
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold text-muted">CHOCOLATEY ID</label>
+                                    <input asp-for="Profile.ChocolateyId" class="form-control font-monospace bg-light" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold text-muted">ТЕГИ</label>
+                                    <input asp-for="Profile.Tags" class="form-control" />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">ССЫЛКА НА ИКОНКУ (Опционально)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted"><i class="bi bi-link-45deg"></i></span>
+                                    <input asp-for="Profile.IconUrl" class="form-control" oninput="updateLogoPreview(this.value)" placeholder="http://..." />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">ОПИСАНИЕ</label>
+                                <textarea asp-for="Profile.Description" class="form-control" rows="6"></textarea>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col">
+                                    <label class="form-label small fw-bold text-muted">САЙТ</label>
+                                    <input asp-for="Profile.Homepage" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col">
+                                    <label class="form-label small fw-bold text-muted">ЛИЦЕНЗИЯ</label>
+                                    <input asp-for="Profile.LicenseUrl" class="form-control form-control-sm" />
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-green">
+                                <i class="bi bi-save me-2"></i> Сохранить изменения
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. ПРАВАЯ КОЛОНКА: ИМПОРТ -->
+            <div class="col-lg-3">
+                <div class="card shadow-sm border-info h-100" style="border-style: dashed;">
+                    <div class="card-body bg-info bg-opacity-10 rounded">
+                        <h6 class="fw-bold text-info mb-3"><i class="bi bi-magic me-2"></i>Авто-импорт</h6>
+                        <p class="small text-muted mb-3">
+                            Найти и перезаписать описание, иконки и скриншоты из внешних источников.
+                        </p>
+
+                        <form method="post" asp-page-handler="Sync">
+                            <input type="hidden" asp-for="Profile.Id" />
+
+                            <div class="mb-3">
+                                <input asp-for="ImportQuery" class="form-control form-control-sm border-info" placeholder="Название или ID" />
+                            </div>
+
+                            <div class="mb-3 small">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" asp-for="ImportSource" value="Auto" id="srcAuto" checked>
+                                    <label class="form-check-label" for="srcAuto">Auto (Все источники)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" asp-for="ImportSource" value="Flathub" id="srcFlat">
+                                    <label class="form-check-label" for="srcFlat">Только Flathub</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" asp-for="ImportSource" value="Chocolatey" id="srcChoco">
+                                    <label class="form-check-label" for="srcChoco">Только Chocolatey</label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-info w-100 text-white fw-bold btn-sm">
+                                <i class="bi bi-cloud-download me-1"></i> Импортировать
+                            </button>
+                        </form>
+
+                        @if (TempData["Message"] != null)
+                        {
+                            <div class="alert alert-success mt-3 small py-2 mb-0"><i class="bi bi-check-circle me-1"></i> @TempData["Message"]</div>
+                        }
+                        @if (TempData["Error"] != null)
+                        {
+                            <div class="alert alert-danger mt-3 small py-2 mb-0">@TempData["Error"]</div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+        </div> <!-- Закрытие ROW -->
+        <!-- ... Дальше идет блок ГАЛЕРЕЯ ... -->
+
+
+    <!-- БЛОК 2: ГАЛЕРЕЯ СКРИНШОТОВ -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 text-muted"><i class="bi bi-images"></i> Скриншоты</h4>
+                    <span class="badge bg-light text-dark border">
+                        @(Model.Profile.Screenshots?.Count ?? 0) изображений
+                    </span>
+                </div>
+
+                <div class="card-body p-0 bg-dark rounded-bottom overflow-hidden position-relative">
+                    @if (Model.Profile.Screenshots != null && Model.Profile.Screenshots.Any())
+                    {
+                        <!-- ЕСТЬ СКРИНШОТЫ -> ПОКАЗЫВАЕМ КАРУСЕЛЬ -->
+                        <div id="appScreenshots" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-indicators">
+                                @for (int i = 0; i < Model.Profile.Screenshots.Count; i++)
+                                {
+                                    <button type="button" data-bs-target="#appScreenshots" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")"></button>
+                                }
+                            </div>
+                            <div class="carousel-inner">
+                                @for (int i = 0; i < Model.Profile.Screenshots.Count; i++)
+                                {
+                                    <div class="carousel-item @(i == 0 ? "active" : "")">
+                                        <div class="d-flex justify-content-center align-items-center" style="height: 500px; background: #212529;">
+                                            <img src="@Model.Profile.Screenshots[i]" class="d-block"
+                                                 style="max-height: 100%; max-width: 100%; object-fit: contain;"
+                                                 alt="Screenshot @(i + 1)">
+                                        </div>
+                                        <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded px-2 py-1 mb-4">
+                                            <small>Изображение @(i + 1) из @Model.Profile.Screenshots.Count</small>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            @if (Model.Profile.Screenshots.Count > 1)
+                            {
+                                <button class="carousel-control-prev" type="button" data-bs-target="#appScreenshots" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Предыдущий</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#appScreenshots" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Следующий</span>
+                                </button>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- НЕТ СКРИНШОТОВ -> ПОКАЗЫВАЕМ ЗАГЛУШКУ -->
+                        <!-- Добавил bg-opacity-10 для фона и text-secondary для текста -->
+                        <div class="d-flex flex-column justify-content-center align-items-center py-5 bg-secondary bg-opacity-10 rounded-bottom">
+                            <i class="bi bi-images display-4 mb-3 opacity-50" style="color: var(--text-muted);"></i>
+                            <p class="fw-bold mb-1" style="color: var(--text-main);">Скриншоты отсутствуют</p>
+                            <small class="opacity-75" style="color: var(--text-muted);">Выполните импорт из Flathub</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-grid-3x3-gap"></i> Управление галереей</h6>
+
+                        <!-- Кнопка добавления -->
+                        <form method="post" enctype="multipart/form-data" asp-page-handler="AddScreenshots">
+                            <input type="hidden" asp-for="Profile.Id" />
+                            <label class="btn btn-sm btn-success">
+                                <i class="bi bi-plus-lg me-1"></i> Добавить фото
+                                <input asp-for="UploadScreenshots" type="file" class="d-none" multiple accept="image/*" onchange="this.form.submit()" />
+                            </label>
+                        </form>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.Profile.Screenshots != null && Model.Profile.Screenshots.Any())
+                        {
+                            <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-3">
+                                @foreach (var screenUrl in Model.Profile.Screenshots)
+                                {
+                                    <div class="col">
+                                        <div class="card h-100 border position-relative group-hover-trigger">
+                                            <img src="@screenUrl" class="card-img-top" style="height: 100px; object-fit: cover;">
+
+                                            <!-- Кнопка удаления (появляется при наведении) -->
+                                            <div class="position-absolute top-0 end-0 p-1">
+                                                <form method="post" asp-page-handler="DeleteScreenshot">
+                                                    <input type="hidden" asp-for="Profile.Id" />
+                                                    <input type="hidden" name="imageUrl" value="@screenUrl" />
+                                                    <button class="btn btn-danger btn-sm py-0 px-1 shadow-sm" title="Удалить">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted py-3 small">Нет изображений. Добавьте первое!</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- БЛОК 3: СПИСОК ФАЙЛОВ (ВЕРСИЙ) -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 text-secondary"><i class="bi bi-hdd-network"></i> Файлы и Версии</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40%;">Настройки версии</th>
+                                    <th>Файл / Комментарий</th>
+                                    <th class="text-end">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var file in Model.Profile.Installers.OrderByDescending(f => f.Id))
+                                {
+                                    <tr>
+                                        <!-- КОЛОНКА 1: Форма редактирования -->
+                                        <td>
+                                            <form method="post" asp-page-handler="UpdateVersion" class="row g-2 align-items-center">
+                                                <input type="hidden" name="fileId" value="@file.Id" />
+
+                                                <!-- Версия -->
+                                                <div class="col-auto">
+                                                    <div class="input-group input-group-sm">
+                                                        <span class="input-group-text bg-light">v</span>
+                                                        <input type="text" name="newVersion" value="@file.Version" class="form-control fw-bold font-monospace" style="width: 80px;" />
+                                                    </div>
+                                                </div>
+
+                                                <!-- Чекбокс IsExtra -->
+                                                <div class="col-auto">
+                                                    <div class="form-check form-switch" title="Отметить как доп. файл (не основная программа)">
+                                                        <input class="form-check-input" type="checkbox" name="isExtra" value="true" id="extra_@file.Id" @(file.IsExtra ? "checked" : "")>
+                                                        <label class="form-check-label small text-muted" for="extra_@file.Id">Доп.</label>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Кнопка сохранить (дискета) -->
+                                                <div class="col-auto">
+                                                    <button class="btn btn-outline-primary btn-sm" title="Сохранить изменения"><i class="bi bi-save"></i></button>
+                                                </div>
+                                            </form>
+                                        </td>
+
+                                        <!-- КОЛОНКА 2: Инфо о файле + Комментарий -->
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <div class="fw-bold text-break">@file.Filename</div>
+                                                <div class="small text-muted">
+                                                    @((file.FileSize / 1024.0 / 1024.0).ToString("F2")) MB • @file.FilePath
+                                                </div>
+
+                                                <!-- Поле ввода комментария (относится к форме выше, но визуально здесь)
+                                                     Хак: HTML формы не могут быть разбросаны по ячейкам.
+                                                     Поэтому мы используем JS или (проще) просто вставим input внутрь формы в первой колонке?
+                                                     Нет, таблица сломает форму.
+
+                                                     РЕШЕНИЕ: Делаем всю строку одной формой или используем атрибут form="" (HTML5).
+                                                -->
+                                                <input type="text" form="form_@file.Id" name="comment" value="@file.Comment"
+                                                       class="form-control form-control-sm mt-1 bg-light border-0"
+                                                       placeholder="Комментарий для пользователя (опционально)..." />
+                                            </div>
+
+                                            <!-- Привязываем форму из первой колонки к этому ID -->
+                                            <script>
+                                                // Находим форму в предыдущей ячейке и даем ей ID
+                                                document.currentScript.parentElement.previousElementSibling.querySelector('form').id = 'form_@file.Id';
+                                            </script>
+                                        </td>
+
+                                        <!-- КОЛОНКА 3: Действия -->
+                                        <td class="text-end">
+                                            <div class="d-flex justify-content-end gap-2">
+                                                @if (Model.Profile.Installers.Count > 1)
+                                                {
+                                                    <form method="post" asp-page-handler="Split"
+                                                          onsubmit="return confirm('Создать отдельную карточку программы для этого файла?');">
+                                                        <input type="hidden" name="fileId" value="@file.Id" />
+                                                        <button class="btn btn-sm btn-outline-info" title="Выделить в новую программу">
+                                                            <i class="bi bi-diagram-2-fill"></i>
+                                                        </button>
+                                                    </form>
+                                                }
+                                                <a asp-page-handler="DownloadInstaller" asp-route-fileId="@file.Id" class="btn btn-sm btn-outline-success">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                                <form method="post" asp-page-handler="Build">
+                                                    <input type="hidden" name="fileId" value="@file.Id" />
+                                                    <button class="btn btn-sm btn-warning fw-bold"><i class="bi bi-box-seam"></i></button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>
+
+<!-- СКРИПТЫ -->
+<script>
+    // Функция обновления превью логотипа в реальном времени
+    function updateLogoPreview(url) {
+        const img = document.getElementById('mainLogoImage');
+        const fallback = 'https://raw.githubusercontent.com/chocolatey/chocolatey-coreteampackages/master/icons/chocolatey.png';
+
+        if (!url || url.trim() === '') {
+            img.src = fallback;
+            return;
+        }
+
+        // Пытаемся загрузить, если ошибка - ставим fallback
+        const tempImg = new Image();
+        tempImg.onload = function() { img.src = url; };
+        tempImg.onerror = function() { img.src = fallback; };
+        tempImg.src = url;
+    }
+</script>
+
+<style>
+    /* Немного стилей для улучшения восприятия */
+    .card {
+        border-radius: 12px;
+    }
+
+    .carousel-item {
+        transition: transform .6s ease-in-out;
+    }
+
+    .carousel-control-prev, .carousel-control-next {
+        width: 5%;
+    }
+
+    .form-label {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+    }
+</style>

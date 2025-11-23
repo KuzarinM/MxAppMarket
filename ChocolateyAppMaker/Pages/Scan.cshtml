@@ -1,0 +1,191 @@
+﻿@page
+@model ScanModel
+@{
+    ViewData["Title"] = "Сканирование";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <!-- Блок Запуска -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-search"></i> Сканирование папки</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="Start" id="scanForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Путь к папке с инсталляторами</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-folder2-open"></i></span>
+                                <input asp-for="FolderPath" class="form-control" placeholder="C:\Installers" id="folderInput" />
+                            </div>
+                            <div class="form-text">Поддерживаются: .exe, .msi, .zip, .rar, .7z</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 btn-lg" id="startBtn">
+                            <i class="bi bi-play-circle"></i> Начать сканирование
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="card shadow-sm border-warning mb-4">
+                <div class="card-header bg-warning bg-opacity-10 border-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-tools"></i> Обслуживание базы данных</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="fw-bold">Объединение дубликатов</h6>
+                            <p class="text-muted small mb-0">
+                                Если вы вручную указали одинаковый <code>Chocolatey ID</code> для разных программ,
+                                эта функция объединит их в одну карточку, собрав все версии файлов вместе.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <form method="post" asp-page-handler="Merge">
+                                <button type="submit" class="btn btn-outline-dark w-100" id="mergeBtn" >
+                                    <i class="bi bi-intersect"></i> Объединить
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Блок Прогресса (Скрыт, если не сканируется) -->
+            <div class="card shadow-sm border-info" id="progressCard" style="display: none;">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-cpu"></i> Процесс выполнения</h5>
+                    <span class="badge bg-light text-dark" id="counterBadge">0 / 0</span>
+                </div>
+                <div class="card-body">
+                    <!-- Текст статуса -->
+                    <p class="fw-bold text-primary mb-2" id="statusText">Инициализация...</p>
+
+                    <!-- Прогресс бар -->
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">0%</div>
+                    </div>
+
+                    <!-- Логи -->
+                    <div class="bg-dark text-light p-3 rounded font-monospace" style="height: 200px; overflow-y: auto; font-size: 0.85em;" id="logConsole">
+                        <div class="text-muted">// Ожидание логов...</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function startMerge() {
+            // Мы используем тот же механизм логов, что и для сканирования,
+            // поэтому просто визуально реагируем на клик, а основной скрипт checkStatus подхватит логи.
+            const btn = document.getElementById('mergeBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Анализ...';
+
+            return true
+        }
+        const startBtn = document.getElementById('startBtn');
+        const folderInput = document.getElementById('folderInput');
+        const progressCard = document.getElementById('progressCard');
+        const progressBar = document.getElementById('progressBar');
+        const statusText = document.getElementById('statusText');
+        const counterBadge = document.getElementById('counterBadge');
+        const logConsole = document.getElementById('logConsole');
+
+        // Опрос каждые 1 сек
+        const pollInterval = setInterval(checkStatus, 1000);
+
+        async function checkStatus() {
+            try {
+                const response = await fetch('?handler=Status');
+                if (!response.ok) return; // Если сервер упал, не паникуем
+
+                const data = await response.json();
+                renderState(data);
+            } catch (e) {
+                console.error("Ошибка соединения:", e);
+            }
+        }
+
+        function renderState(data) {
+            // 1. Если вообще ничего не происходило (чистый старт)
+            if (!data.isScanning && data.total === 0) {
+                progressCard.style.display = 'none';
+                unlockUI();
+                return;
+            }
+
+            // 2. Показываем карточку прогресса
+            progressCard.style.display = 'block';
+
+            // 3. Вычисляем процент
+            let percent = 0;
+            if (data.total > 0) {
+                percent = Math.round((data.processed / data.total) * 100);
+            }
+
+            progressBar.style.width = percent + '%';
+            progressBar.innerText = percent + '%';
+            counterBadge.innerText = `${data.processed} / ${data.total}`;
+
+            // 4. Обновляем логи (всегда)
+            if (data.logs && data.logs.length > 0) {
+                // Простая оптимизация: перезаписываем только если длина изменилась или это первый рендер
+                // Но для простоты можно перезаписывать всегда
+                logConsole.innerHTML = data.logs.map(l => `<div>${l}</div>`).join('');
+                logConsole.scrollTop = logConsole.scrollHeight;
+            }
+
+            // 5. ГЛАВНАЯ ЛОГИКА СОСТОЯНИЯ
+            if (data.isScanning) {
+                // === СКАНИРОВАНИЕ ИДЕТ ===
+                lockUI();
+                statusText.innerText = data.status;
+                statusText.className = "fw-bold text-primary mb-2";
+                progressBar.classList.add('progress-bar-animated', 'progress-bar-striped');
+                progressBar.classList.remove('bg-success');
+            } else {
+                // === СКАНИРОВАНИЕ ЗАВЕРШЕНО (но данные есть) ===
+                unlockUI();
+
+                // Если мы только что закончили, сервер уже установил статус "Сканирование завершено"
+                // Но мы можем форсировать красивый текст:
+                statusText.innerText = "✅ Сканирование успешно завершено!";
+                statusText.className = "fw-bold text-success mb-2";
+
+                progressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
+                progressBar.classList.add('bg-success');
+                progressBar.style.width = '100%';
+                progressBar.innerText = '100%';
+            }
+        }
+
+        function lockUI() {
+            // Блокируем только если еще не заблокировано
+            if (!startBtn.disabled) {
+                startBtn.disabled = true;
+                folderInput.disabled = true;
+                startBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Сканирование идет...';
+            }
+        }
+
+        function unlockUI() {
+            // Разблокируем только если заблокировано
+            if (startBtn.disabled) {
+                startBtn.disabled = false;
+                folderInput.disabled = false;
+                startBtn.innerHTML = '<i class="bi bi-play-circle"></i> Начать сканирование';
+            }
+        }
+
+        // Запускаем проверку сразу при загрузке
+        checkStatus();
+    </script>
+}

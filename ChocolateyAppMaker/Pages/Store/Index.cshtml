@@ -1,0 +1,249 @@
+﻿@page
+@model ChocolateyAppMaker.Pages.Store.IndexModel
+@{
+    ViewData["Title"] = "Каталог";
+}
+
+<div class="container py-5">
+
+    <!-- 1. ЗАГОЛОВОК И ГЛОБАЛЬНЫЙ ПОИСК -->
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-emphasis-body mb-2">Каталог приложений</h1>
+
+        <div class="row justify-content-center mb-4">
+            <div class="col-xl-8 col-lg-10">
+                <form method="get" class="card shadow-sm border-0 p-2 rounded-4 bg-body-tertiary">
+                    <!-- Сохраняем теги при поиске по тексту -->
+                    <input type="hidden" name="Tag" value="@Model.Tag" />
+
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-0 text-muted ps-3">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" name="SearchTerm" value="@Model.SearchTerm"
+                               class="form-control border-0 shadow-none bg-transparent form-control-lg"
+                               placeholder="Поиск по названию..." autocomplete="off">
+                        <button class="btn btn-primary rounded-pill px-4 fw-bold" type="submit">
+                            Найти
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 2. БЛОК ФИЛЬТРАЦИИ ПО ТЕГАМ -->
+        <div class="row justify-content-center">
+            <div class="col-xl-10">
+                <!-- Кнопка-триггер (показывает сколько выбрано) -->
+                <div class="d-flex align-items-center justify-content-center mb-2">
+                    <button class="btn btn-sm btn-link text-decoration-none fw-bold text-body" type="button" data-bs-toggle="collapse" data-bs-target="#tagsCollapse">
+                        <i class="bi bi-funnel"></i> Фильтры
+                        @if (Model.ActiveTagsList.Any())
+                        {
+                            <span class="badge bg-primary rounded-pill ms-1">@Model.ActiveTagsList.Count</span>
+                        }
+                    </button>
+                    @if (Model.ActiveTagsList.Any() || !string.IsNullOrEmpty(Model.SearchTerm))
+                    {
+                        <span class="text-muted mx-2 opacity-25">|</span>
+                        <a asp-page="./Index" class="text-danger small text-decoration-none fw-bold">
+                            Сбросить всё
+                        </a>
+                    }
+                </div>
+
+                <!-- Выпадающая панель -->
+                <div class="collapse @(Model.ActiveTagsList.Any() ? "show" : "")" id="tagsCollapse">
+                    <!-- ИСПРАВЛЕНИЕ 2: bg-body-tertiary для темной темы -->
+                    <div class="card card-body border-0 bg-body-tertiary rounded-4 p-4 shadow-sm">
+
+                        <!-- А. АКТИВНЫЕ ТЕГИ (ОТДЕЛЬНО) -->
+                        @if (Model.ActiveTagsList.Any())
+                        {
+                            <div class="mb-3 text-center border-bottom pb-3 border-secondary border-opacity-10">
+                                <small class="text-muted text-uppercase fw-bold d-block mb-2" style="font-size: 0.7rem;">Выбрано</small>
+                                <div class="d-flex flex-wrap justify-content-center gap-2">
+                                    @foreach (var activeTag in Model.ActiveTagsList)
+                                    {
+                                        var removeUrl = Model.GetToggleTagParam(activeTag);
+                                        <a asp-page="./Index"
+                                           asp-route-Tag="@removeUrl"
+                                           asp-route-SearchTerm="@Model.SearchTerm"
+                                           class="btn btn-sm btn-primary rounded-pill shadow-sm pe-2">
+                                            @activeTag <i class="bi bi-x-lg ms-1 opacity-50"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Б. ПОИСК ТЕГА -->
+                        <div class="position-relative w-50 mx-auto mb-3">
+                            <input type="text" id="tagFilterInput"
+                                   class="form-control form-control-sm text-center bg-transparent border-0 border-bottom rounded-0 shadow-none"
+                                   placeholder="Найти тег..." />
+                            <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y text-muted small pe-2"></i>
+                        </div>
+
+                        <!-- В. ОБЛАКО ДОСТУПНЫХ ТЕГОВ -->
+                        <div class="d-flex flex-wrap justify-content-center gap-2" id="tagCloudContainer">
+                            @{
+                                // Исключаем уже выбранные, чтобы не дублировать
+                                var availableTags = Model.AllTags.Where(t => !Model.IsTagActive(t)).ToList();
+                                int counter = 0;
+                            }
+
+                            @foreach (var t in availableTags)
+                            {
+                                var addUrl = Model.GetToggleTagParam(t);
+                                // ИСПРАВЛЕНИЕ 1: Показываем только первые 20, остальным класс "extra-tag d-none"
+                                bool isVisible = counter < 20;
+                                counter++;
+
+                                <a asp-page="./Index"
+                                   asp-route-Tag="@addUrl"
+                                   asp-route-SearchTerm="@Model.SearchTerm"
+                                   class="btn btn-sm rounded-pill tag-item btn-outline-secondary border-opacity-25 @(isVisible ? "visible-initially" : "extra-tag d-none")"
+                                   data-tag-name="@t">
+                                    @t
+                                </a>
+                            }
+
+                            <!-- Кнопка "Показать еще", если тегов много и фильтр пустой -->
+                            @if (availableTags.Count > 20)
+                            {
+                                <button type="button" id="showMoreTagsBtn" class="btn btn-sm btn-link text-muted text-decoration-none" onclick="showAllTags()">
+                                    Показать ещё...
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. СЕТКА РЕЗУЛЬТАТОВ -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 mb-5">
+        @foreach (var item in Model.Data.Items)
+        {
+            <div class="col">
+                <div class="card h-100 border-0 card-hover position-relative shadow-sm bg-body-tertiary">
+                    <a asp-page="./Details" asp-route-id="@item.Id" class="stretched-link"></a>
+                    <div class="card-body text-center p-4">
+                        <img src="@item.DisplayIconUrl"
+                             class="rounded-4 shadow-sm bg-body p-1 mb-3"
+                             style="width: 72px; height: 72px; object-fit: contain;"
+                             onerror="this.src='/images/no-icon.svg'" />
+
+                        <h6 class="card-title fw-bold text-emphasis-body mb-1 text-truncate">@item.Name</h6>
+
+                        @{
+                            var ver = item.Installers.OrderByDescending(i => i.Id).FirstOrDefault()?.Version ?? "N/A";
+                        }
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-opacity-10 rounded-pill mb-3">v @ver</span>
+
+                        <div class="d-flex justify-content-center gap-1 overflow-hidden" style="height: 22px;">
+                            @if (!string.IsNullOrEmpty(item.Tags))
+                            {
+                                foreach (var t in item.Tags.Split(' ').Take(3))
+                                {
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border-0 fw-normal" style="font-size: 0.6rem;">@t</span>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (Model.Data.TotalCount == 0)
+    {
+        <div class="text-center py-5">
+            <h3 class="fw-bold text-muted">Ничего не найдено</h3>
+        </div>
+    }
+
+    <!-- Пагинация -->
+    @if (Model.Data.TotalPages > 1)
+    {
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(!Model.Data.HasPreviousPage ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-3 mx-1 border-0 shadow-sm"
+                       asp-page="./Index"
+                       asp-route-p="@(Model.Data.PageIndex - 1)"
+                       asp-route-SearchTerm="@Model.SearchTerm"
+                       asp-route-Tag="@Model.Tag">Назад</a>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link border-0 bg-transparent fw-bold">
+                        @Model.Data.PageIndex из @Model.Data.TotalPages
+                    </span>
+                </li>
+                <li class="page-item @(!Model.Data.HasNextPage ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-3 mx-1 border-0 shadow-sm"
+                       asp-page="./Index"
+                       asp-route-p="@(Model.Data.PageIndex + 1)"
+                       asp-route-SearchTerm="@Model.SearchTerm"
+                       asp-route-Tag="@Model.Tag">Вперед</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+<script>
+    const filterInput = document.getElementById('tagFilterInput');
+    const allTagBtns = document.querySelectorAll('#tagCloudContainer .tag-item');
+    const showMoreBtn = document.getElementById('showMoreTagsBtn');
+
+    // Функция: показать вообще все (при клике на "Показать еще")
+    function showAllTags() {
+        document.querySelectorAll('.extra-tag').forEach(el => el.classList.remove('d-none'));
+        if(showMoreBtn) showMoreBtn.classList.add('d-none');
+    }
+
+    // Фильтрация при вводе
+    filterInput.addEventListener('keyup', function() {
+        const val = this.value.toLowerCase().trim();
+
+        if (val === "") {
+            // Если поиск пустой -> возвращаем исходное состояние (первые 20)
+            allTagBtns.forEach(btn => {
+                if (btn.classList.contains('visible-initially')) {
+                    btn.classList.remove('d-none');
+                } else {
+                    btn.classList.add('d-none');
+                }
+            });
+            // Возвращаем кнопку "Показать еще", если она была
+            if(showMoreBtn) showMoreBtn.classList.remove('d-none');
+        } else {
+            // Если что-то ввели -> ищем везде
+            // Скрываем кнопку "Показать еще", так как мы теперь сами управляем выдачей
+            if(showMoreBtn) showMoreBtn.classList.add('d-none');
+
+            allTagBtns.forEach(btn => {
+                const text = btn.getAttribute('data-tag-name').toLowerCase();
+                if (text.indexOf(val) > -1) {
+                    btn.classList.remove('d-none');
+                } else {
+                    btn.classList.add('d-none');
+                }
+            });
+        }
+    });
+</script>
+
+<style>
+    /* Легкий ховер эффект для карточек */
+    .card-hover {
+        transition: transform 0.2s;
+    }
+
+        .card-hover:hover {
+            transform: translateY(-3px);
+        }
+</style>

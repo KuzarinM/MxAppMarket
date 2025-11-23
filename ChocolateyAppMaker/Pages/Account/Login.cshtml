@@ -1,0 +1,111 @@
+﻿@page
+@model ChocolateyAppMaker.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Вход";
+    Layout = null; /* Отключаем общий лейаут */
+}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Вход - MxStore</title>
+
+    <!-- Иконка вкладки -->
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg">
+
+    <!-- Стили -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Подключаем наши стили для темной темы -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <!-- Скрипт темы (чтобы не мигало белым) -->
+    <script>
+        const storedTheme = localStorage.getItem('theme');
+        const themeToApply = storedTheme || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', themeToApply);
+    </script>
+
+    <style>
+        /* Центрирование на весь экран */
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            /* Используем переменную фона из site.css */
+            background-color: var(--bg-body);
+            transition: background-color 0.3s ease;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            /* Используем переменную фона карточки */
+            background-color: var(--card-bg);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+
+                <!-- Логотип и Заголовок -->
+                <div class="text-center mb-4">
+                    <!-- Вставляем тот же SVG, что в фавиконке, но побольше -->
+                    <div class="mb-3 d-inline-block shadow-lg rounded-4" style="width: 80px; height: 80px;">
+                        <svg width="80" height="80" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="gradLogin" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#34d399;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <rect width="64" height="64" rx="16" fill="url(#gradLogin)" />
+                            <path fill="#ffffff" d="M32 14L12 24L32 34L52 24L32 14ZM12 27V39C12 40.65 13.34 42 15 42H49C50.65 42 52 40.65 52 39V27L32 37L12 27Z" />
+                        </svg>
+                    </div>
+                    <h2 class="fw-bold" style="color: var(--text-main);">MxStore</h2>
+                    <p class="text-muted small">Корпоративный каталог приложений</p>
+                </div>
+
+                <!-- Карточка входа -->
+                <div class="card login-card border-0 shadow-lg rounded-4 p-3">
+                    <div class="card-body">
+                        <form method="post">
+                            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">ЛОГИН</label>
+                                <!-- Классы инпутов адаптированы под тему в site.css -->
+                                <input asp-for="Input.UserName" class="form-control py-2" placeholder="Введите логин" autofocus />
+                                <span asp-validation-for="Input.UserName" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label small fw-bold text-muted">ПАРОЛЬ</label>
+                                <input asp-for="Input.Password" class="form-control py-2" placeholder="Введите пароль" />
+                                <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-green">
+                                Войти
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Копирайт -->
+                <div class="text-center mt-4 text-muted small opacity-75">
+                    &copy; @DateTime.Now.Year ChocoStore
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
