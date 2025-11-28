@@ -1,109 +1,78 @@
 ﻿@page
 @model ChocolateyAppMaker.Pages.Account.LoginModel
 @{
-    ViewData["Title"] = "Вход";
-    Layout = null; /* Отключаем общий лейаут */
+    ViewData["Title"] = "AUTH_REQUIRED";
+    Layout = null;
 }
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Вход - MxStore</title>
-
-    <!-- Иконка вкладки -->
-    <link rel="icon" type="image/svg+xml" href="~/favicon.svg">
-
-    <!-- Стили -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Подключаем наши стили для темной темы -->
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-
-    <!-- Скрипт темы (чтобы не мигало белым) -->
+    <title>AUTH - MxStore</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        const storedTheme = localStorage.getItem('theme');
-        const themeToApply = storedTheme || 'dark';
-        document.documentElement.setAttribute('data-bs-theme', themeToApply);
-    </script>
-
-    <style>
-        /* Центрирование на весь экран */
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            /* Используем переменную фона из site.css */
-            background-color: var(--bg-body);
-            transition: background-color 0.3s ease;
+        tailwind.config = {
+            theme: {
+                extend: { colors: { zinc: { 950: '#09090b', 900: '#18181b' }, emerald: { 500: '#10b981' } } }
+            }
         }
-
-        .login-card {
-            width: 100%;
-            max-width: 400px;
-            /* Используем переменную фона карточки */
-            background-color: var(--card-bg);
+    </script>
+    <style>
+        body {
+            background-color: #09090b;
+            color: #f4f4f5;
+            font-family: monospace;
+            background-image: radial-gradient(#18181b 1px, transparent 1px);
+            background-size: 20px 20px;
         }
     </style>
 </head>
-<body>
+<body class="flex items-center justify-center min-h-screen p-4">
 
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-4">
+    <div class="w-full max-w-md bg-zinc-900 border border-emerald-500/30 rounded shadow-[0_0_30px_rgba(16,185,129,0.1)] overflow-hidden">
 
-                <!-- Логотип и Заголовок -->
-                <div class="text-center mb-4">
-                    <!-- Вставляем тот же SVG, что в фавиконке, но побольше -->
-                    <div class="mb-3 d-inline-block shadow-lg rounded-4" style="width: 80px; height: 80px;">
-                        <svg width="80" height="80" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <linearGradient id="gradLogin" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" style="stop-color:#34d399;stop-opacity:1" />
-                                    <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
-                                </linearGradient>
-                            </defs>
-                            <rect width="64" height="64" rx="16" fill="url(#gradLogin)" />
-                            <path fill="#ffffff" d="M32 14L12 24L32 34L52 24L32 14ZM12 27V39C12 40.65 13.34 42 15 42H49C50.65 42 52 40.65 52 39V27L32 37L12 27Z" />
-                        </svg>
-                    </div>
-                    <h2 class="fw-bold" style="color: var(--text-main);">MxStore</h2>
-                    <p class="text-muted small">Корпоративный каталог приложений</p>
+        <!-- Header -->
+        <div class="flex items-center justify-between p-3 border-b border-zinc-800 bg-zinc-950">
+            <h2 class="text-emerald-500 font-bold tracking-widest flex items-center gap-2 text-sm">
+                <span class="animate-pulse">_</span>ACCESS_CONTROL
+            </h2>
+            <span class="text-zinc-600 text-xs">[SECURE]</span>
+        </div>
+
+        <div class="p-8">
+            <div class="mb-6 text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded border border-zinc-700 bg-zinc-950 mb-4 text-emerald-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
+                    </svg>
                 </div>
-
-                <!-- Карточка входа -->
-                <div class="card login-card border-0 shadow-lg rounded-4 p-3">
-                    <div class="card-body">
-                        <form method="post">
-                            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold text-muted">ЛОГИН</label>
-                                <!-- Классы инпутов адаптированы под тему в site.css -->
-                                <input asp-for="Input.UserName" class="form-control py-2" placeholder="Введите логин" autofocus />
-                                <span asp-validation-for="Input.UserName" class="text-danger small"></span>
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="form-label small fw-bold text-muted">ПАРОЛЬ</label>
-                                <input asp-for="Input.Password" class="form-control py-2" placeholder="Введите пароль" />
-                                <span asp-validation-for="Input.Password" class="text-danger small"></span>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-green">
-                                Войти
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Копирайт -->
-                <div class="text-center mt-4 text-muted small opacity-75">
-                    &copy; @DateTime.Now.Year ChocoStore
-                </div>
-
+                <h1 class="text-xl font-bold tracking-wider text-zinc-200">AUTHENTICATE</h1>
             </div>
+
+            <form method="post" class="space-y-4">
+                <div asp-validation-summary="ModelOnly" class="text-red-500 text-xs border border-red-900/50 bg-red-900/10 p-2 text-center"></div>
+
+                <div>
+                    <label class="block text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Username</label>
+                    <input asp-for="Input.UserName" class="w-full bg-zinc-950 border border-zinc-700 text-emerald-100 px-3 py-2 focus:outline-none focus:border-emerald-500 transition text-sm" placeholder="root" autofocus />
+                    <span asp-validation-for="Input.UserName" class="text-red-500 text-[10px]"></span>
+                </div>
+
+                <div>
+                    <label class="block text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Password</label>
+                    <input asp-for="Input.Password" type="password" class="w-full bg-zinc-950 border border-zinc-700 text-emerald-100 px-3 py-2 focus:outline-none focus:border-emerald-500 transition text-sm" placeholder="••••••" />
+                    <span asp-validation-for="Input.Password" class="text-red-500 text-[10px]"></span>
+                </div>
+
+                <button type="submit" class="w-full mt-4 bg-emerald-900/20 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500 hover:text-black py-2 transition text-xs font-bold uppercase tracking-wider">
+                    [ INITIALIZE_SESSION ]
+                </button>
+            </form>
+        </div>
+
+        <div class="p-3 border-t border-zinc-800 bg-zinc-950 text-center">
+            <a href="/" class="text-zinc-600 hover:text-zinc-400 text-[10px] uppercase transition">← Return to Public Access</a>
         </div>
     </div>
 

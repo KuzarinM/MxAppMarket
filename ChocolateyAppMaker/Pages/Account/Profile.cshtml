@@ -1,123 +1,101 @@
 ﻿@page
 @model ChocolateyAppMaker.Pages.Account.ProfileModel
 @{
-    ViewData["Title"] = "Личный кабинет";
+    ViewData["Title"] = "USER_PROFILE";
 }
 
-<div class="container py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="fw-bold"><i class="bi bi-person-badge text-primary"></i> Мой профиль</h2>
-            <p class="text-muted">Управление учетной записью @Model.CurrentUserName</p>
+<div class="max-w-4xl mx-auto space-y-8">
+
+    <!-- HEADER -->
+    <div class="flex items-center gap-4 border-b border-zinc-800 pb-6">
+        <div class="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-700 text-emerald-500 text-2xl shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+            <i class="bi bi-person-fill"></i>
+        </div>
+        <div>
+            <h2 class="text-2xl font-bold text-zinc-100 tracking-wide">ACCOUNT_SETTINGS</h2>
+            <p class="text-zinc-500 text-xs font-mono">USER: <span class="text-emerald-400">@Model.CurrentUserName</span></p>
         </div>
     </div>
 
-    <!-- Сообщения об успехе/ошибке -->
+    <!-- NOTIFICATIONS -->
     @if (TempData["Message"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i> @TempData["Message"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="bg-emerald-900/10 border border-emerald-500/30 text-emerald-400 px-4 py-3 rounded text-xs font-mono flex items-center gap-2">
+            <i class="bi bi-check-circle-fill"></i> @TempData["Message"]
         </div>
     }
-
     @if (!ModelState.IsValid)
     {
-        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> Пожалуйста, исправьте ошибки в форме.
-            <div asp-validation-summary="All" class="small mt-2"></div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="bg-red-900/10 border border-red-500/30 text-red-400 px-4 py-3 rounded text-xs font-mono">
+            <div asp-validation-summary="All" class="mb-0"></div>
         </div>
     }
 
-    <div class="row g-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-        <!-- Карточка 1: Изменение Логина -->
-        <div class="col-lg-6">
-            <div class="card shadow-sm h-100 border-0">
-                <div class="card-header bg-white fw-bold py-3">
-                    <i class="bi bi-person-gear me-2"></i> Основная информация
+        <!-- CHANGE LOGIN -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded p-6 shadow-lg">
+            <h3 class="text-emerald-500 font-bold text-xs uppercase tracking-widest mb-6 flex items-center gap-2">
+                <i class="bi bi-person-gear"></i> Identity_Configuration
+            </h3>
+
+            <form method="post" asp-page-handler="ChangeName" class="space-y-4">
+                <div>
+                    <label class="block text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Current Handle</label>
+                    <input type="text" class="w-full bg-zinc-950 border border-zinc-800 text-zinc-400 px-3 py-2 text-xs font-mono cursor-not-allowed" value="@Model.CurrentUserName" readonly />
                 </div>
-                <div class="card-body">
-                    <form method="post" asp-page-handler="ChangeName">
-                        <div class="mb-3">
-                            <label class="form-label text-muted small text-uppercase">Текущий логин</label>
-                            <input type="text" class="form-control bg-light" value="@Model.CurrentUserName" readonly />
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Input.NewUserName" class="form-label fw-bold">Новый логин</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-person"></i></span>
-                                <input asp-for="Input.NewUserName" class="form-control" placeholder="Введите новый логин" />
-                            </div>
-                            <span asp-validation-for="Input.NewUserName" class="text-danger small"></span>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">
-                            Сохранить логин
-                        </button>
-                    </form>
+                <div>
+                    <label asp-for="Input.NewUserName" class="block text-zinc-500 text-[10px] uppercase tracking-widest mb-1">New Handle</label>
+                    <input asp-for="Input.NewUserName" class="w-full bg-zinc-950 border border-zinc-700 text-emerald-100 px-3 py-2 text-xs font-mono focus:border-emerald-500 focus:ring-0 transition" placeholder="Enter new username" />
+                    <span asp-validation-for="Input.NewUserName" class="text-red-500 text-[10px]"></span>
                 </div>
-            </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-600 px-4 py-2 rounded text-xs font-bold uppercase transition">
+                        Update Identity
+                    </button>
+                </div>
+            </form>
         </div>
 
-        <!-- Карточка 2: Смена Пароля -->
-        <div class="col-lg-6">
-            <div class="card shadow-sm h-100 border-0">
-                <div class="card-header bg-white fw-bold py-3 text-danger">
-                    <i class="bi bi-shield-lock me-2"></i> Безопасность
-                </div>
-                <div class="card-body">
-                    <form method="post" asp-page-handler="ChangePassword">
-                        <div class="mb-3">
-                            <label asp-for="Input.OldPassword" class="form-label fw-bold">Текущий пароль</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-key"></i></span>
-                                <input asp-for="Input.OldPassword" class="form-control" placeholder="********" />
-                            </div>
-                            <span asp-validation-for="Input.OldPassword" class="text-danger small"></span>
-                        </div>
+        <!-- CHANGE PASSWORD -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded p-6 shadow-lg relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-5 text-6xl text-red-500 pointer-events-none"><i class="bi bi-shield-lock"></i></div>
 
-                        <div class="mb-3">
-                            <label asp-for="Input.NewPassword" class="form-label fw-bold">Новый пароль</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                <input asp-for="Input.NewPassword" class="form-control" placeholder="Минимум 4 символа" />
-                            </div>
-                            <span asp-validation-for="Input.NewPassword" class="text-danger small"></span>
-                        </div>
+            <h3 class="text-red-500 font-bold text-xs uppercase tracking-widest mb-6 flex items-center gap-2">
+                <i class="bi bi-shield-lock"></i> Security_Access
+            </h3>
 
-                        <button type="submit" class="btn btn-danger">
-                            Обновить пароль
-                        </button>
-                    </form>
+            <form method="post" asp-page-handler="ChangePassword" class="space-y-4">
+                <div>
+                    <label asp-for="Input.OldPassword" class="block text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Current Key</label>
+                    <input asp-for="Input.OldPassword" type="password" class="w-full bg-zinc-950 border border-zinc-700 text-emerald-100 px-3 py-2 text-xs font-mono focus:border-red-500 focus:ring-0 transition" placeholder="••••••••" />
                 </div>
-            </div>
+                <div>
+                    <label asp-for="Input.NewPassword" class="block text-zinc-500 text-[10px] uppercase tracking-widest mb-1">New Key</label>
+                    <input asp-for="Input.NewPassword" type="password" class="w-full bg-zinc-950 border border-zinc-700 text-emerald-100 px-3 py-2 text-xs font-mono focus:border-red-500 focus:ring-0 transition" placeholder="Min. 4 chars" />
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-500/50 px-4 py-2 rounded text-xs font-bold uppercase transition">
+                        Reset Credentials
+                    </button>
+                </div>
+            </form>
         </div>
+    </div>
 
-        <!-- Инфо блок -->
-        <div class="col-12">
-            <div class="card bg-light border-0">
-                <div class="card-body d-flex align-items-center">
-                    <i class="bi bi-info-circle text-info fs-4 me-3"></i>
-                    <div>
-                        <h6 class="mb-0 fw-bold">Роль в системе</h6>
-                        <span class="text-muted small">
-                            @if (User.IsInRole("Admin"))
-                            {
-                                <span>Администратор (Полный доступ)</span>
-                            }
-                            else
-                            {
-
-                                <span>Пользователь (Доступ только к каталогу)</span>
-                            }
-                        </span>
-                    </div>
-                </div>
-            </div>
+    <!-- ROLE INFO -->
+    <div class="bg-zinc-900/50 border border-zinc-800 rounded p-4 flex items-center gap-4">
+        <div class="text-emerald-500 text-xl"><i class="bi bi-terminal"></i></div>
+        <div class="text-xs font-mono">
+            <span class="text-zinc-500">SYSTEM_ROLE:</span>
+            @if (User.IsInRole("Admin"))
+            {
+                <span class="text-emerald-400 font-bold">ADMINISTRATOR [ROOT]</span>
+            }
+            else
+            {
+                <span class="text-zinc-300">STANDARD_USER</span>
+            }
         </div>
-
     </div>
 </div>

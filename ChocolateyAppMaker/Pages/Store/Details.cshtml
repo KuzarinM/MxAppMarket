@@ -1,269 +1,179 @@
 ﻿@page "{id:int}"
 @model ChocolateyAppMaker.Pages.Store.DetailsModel
 @{
-    ViewData["Title"] = Model.Profile.Name;
+    ViewData["Title"] = Model.Profile.Name.ToUpper();
 }
 
-<!-- Hero Section -->
-<div class="bg-gradient-green text-white mb-5 py-5 shadow-sm">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-md-auto text-center text-md-start mb-3 mb-md-0">
-                <img src="@Model.Profile.DisplayIconUrl"
-                     class="rounded-4 shadow-lg bg-white p-1"
-                     style="width: 140px; height: 140px; object-fit: contain;"
-                     onerror="this.onerror=null; this.src='/images/no-icon.svg';" />
-            </div>
-            <div class="col-md">
-                <h1 class="fw-bold mb-2 display-5">@Model.Profile.Name</h1>
-                <p class="opacity-75 mb-3 font-monospace"><small>@Model.Profile.ChocolateyId</small></p>
+<div class="max-w-6xl mx-auto">
 
-                <div class="d-flex flex-wrap gap-2 mb-4">
-                    @if (!string.IsNullOrEmpty(Model.Profile.Tags))
-                    {
-                        @foreach (var tag in Model.Profile.Tags.Split(' ').Take(5))
-                        {
-                            // Полупрозрачные белые бейджи
-                            <span class="badge bg-white bg-opacity-25 fw-normal border border-white border-opacity-25">@tag</span>
-                        }
-                    }
-                </div>
-
-                <div class="d-flex gap-3">
-                    @if (!string.IsNullOrEmpty(Model.Profile.Homepage))
-                    {
-                        <a href="@Model.Profile.Homepage" target="_blank" class="btn btn-light btn-sm fw-bold text-success">
-                            <i class="bi bi-globe"></i> Официальный сайт
-                        </a>
-                    }
-                </div>
-            </div>
-
-            <div class="col-md-auto mt-4 mt-md-0">
-                @{
-                    var latest = Model.Profile.Installers.OrderByDescending(x => x.Id).FirstOrDefault();
-                }
-                @if (latest != null)
+    <!-- HEADER -->
+    <div class="flex flex-col md:flex-row gap-6 mb-8 items-start">
+        <div class="w-24 h-24 md:w-32 md:h-32 bg-zinc-900 border border-zinc-800 rounded p-4 flex items-center justify-center flex-shrink-0 shadow-[0_0_20px_rgba(16,185,129,0.05)]">
+            <img src="@Model.Profile.DisplayIconUrl"
+                 class="max-w-full max-h-full object-contain filter grayscale hover:grayscale-0 transition duration-500"
+                 onerror="this.src='/images/no-icon.svg'" />
+        </div>
+        <div class="flex-1">
+            <h1 class="text-3xl font-bold text-zinc-100 uppercase tracking-wide mb-1">@Model.Profile.Name</h1>
+            <div class="flex items-center gap-3 text-xs mb-4">
+                <span class="text-emerald-500 font-mono">ID: @(Model.Profile.ChocolateyId ?? "LOCAL")</span>
+                @if (!string.IsNullOrEmpty(Model.Profile.Homepage))
                 {
-                    <div class="text-center">
-                        <!-- Кнопка: Белая, текст зеленый, большая тень -->
-                        <a asp-page-handler="Download" asp-route-fileId="@latest.Id"
-                           class="btn btn-light btn-lg px-5 py-3 fw-bold text-success shadow-lg"
-                           style="border-radius: 50px;">
-                            <i class="bi bi-download me-2"></i> Скачать
-                        </a>
-                        <div class="mt-2 opacity-75 small">
-                            v@(latest.Version) • @latest.Extension.ToUpper()
-                        </div>
-                    </div>
+                    <span class="text-zinc-700">|</span>
+                    <a href="@Model.Profile.Homepage" target="_blank" class="text-zinc-500 hover:text-emerald-400 transition">[WEBSITE]</a>
+                }
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                @if (!string.IsNullOrEmpty(Model.Profile.Tags))
+                {
+                    @foreach (var tag in Model.Profile.Tags.Split(' ').Take(6))
+                    {
+                        <span class="text-[10px] uppercase border border-zinc-700 text-zinc-400 px-2 py-0.5 rounded bg-zinc-900/50">@tag</span>
+                    }
                 }
             </div>
         </div>
+        <div class="flex-shrink-0">
+            @{
+                var latest = Model.Profile.Installers.OrderByDescending(x => x.Id).FirstOrDefault();
+            }
+            @if (latest != null)
+            {
+                <a asp-page-handler="Download" asp-route-fileId="@latest.Id"
+                   class="block bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded shadow-[0_0_15px_rgba(16,185,129,0.3)] transition text-sm font-bold uppercase tracking-wider text-center">
+                    <i class="bi bi-download mr-2"></i> Download v.@latest.Version
+                </a>
+                <div class="text-[10px] text-zinc-500 text-center mt-2 font-mono">@latest.Extension.ToUpper() / @((latest.FileSize / 1024.0 / 1024.0).ToString("F2")) MB</div>
+            }
+        </div>
     </div>
-</div>
 
-<div class="container">
-    <div class="row">
-        <!-- Левая колонка: Описание и Скриншоты -->
-        <div class="col-lg-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            <!-- Галерея -->
+        <!-- LEFT: INFO -->
+        <div class="lg:col-span-2 space-y-8">
+
+            <!-- CAROUSEL (JS CONTROLLED) -->
             @if (Model.Profile.Screenshots != null && Model.Profile.Screenshots.Any())
             {
-                <div class="card shadow-sm border-0 mb-4 overflow-hidden">
-                    <div id="storeCarousel" class="carousel slide bg-dark" data-bs-ride="carousel">
-                        <div class="carousel-indicators">
-                            @for (int i = 0; i < Model.Profile.Screenshots.Count; i++)
-                            {
-                                <button type="button" data-bs-target="#storeCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")"></button>
-                            }
-                        </div>
-                        <div class="carousel-inner">
-                            @for (int i = 0; i < Model.Profile.Screenshots.Count; i++)
-                            {
-                                <div class="carousel-item @(i == 0 ? "active" : "")">
-                                    <div class="d-flex justify-content-center align-items-center" style="height: 450px;">
-                                        <img src="@Model.Profile.Screenshots[i]" class="d-block" style="max-height: 100%; max-width: 100%; object-fit: contain;">
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                        @if (Model.Profile.Screenshots.Count > 1)
+                <div class="relative bg-zinc-900/50 border border-zinc-800 rounded overflow-hidden group">
+                    <!-- Slides Container -->
+                    <div id="carouselSlides" class="relative h-[400px] w-full">
+                        @for (int i = 0; i < Model.Profile.Screenshots.Count; i++)
                         {
-                            <button class="carousel-control-prev" type="button" data-bs-target="#storeCarousel" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#storeCarousel" data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            </button>
+                            <div class="carousel-slide absolute inset-0 transition-opacity duration-300 @(i == 0 ? "opacity-100 z-10" : "opacity-0 z-0") flex items-center justify-center bg-zinc-950/80" data-index="@i">
+                                <img src="@Model.Profile.Screenshots[i]" class="max-h-full max-w-full object-contain" />
+                            </div>
                         }
                     </div>
+
+                    <!-- Controls (Visible on hover) -->
+                    @if (Model.Profile.Screenshots.Count > 1)
+                    {
+                        <button onclick="changeSlide(-1)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-emerald-500/80 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition z-20">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button onclick="changeSlide(1)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-emerald-500/80 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition z-20">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                        <!-- Indicators -->
+                        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                            @for (int i = 0; i < Model.Profile.Screenshots.Count; i++)
+                            {
+                                <div class="w-2 h-2 rounded-full bg-white/30 slide-indicator transition @(i == 0 ? "bg-emerald-500" : "")" data-index="@i"></div>
+                            }
+                        </div>
+                    }
                 </div>
             }
 
-            <!-- Описание -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3 border-bottom pb-2">О программе</h5>
-                    <div class="markdown-content text-secondary">
-                        @Html.Raw(Model.DescriptionHtml)
-                    </div>
+            <!-- DESCRIPTION (MARKDOWN) -->
+            <div class="bg-zinc-900/20 border border-zinc-800/50 p-6 rounded">
+                <h3 class="text-zinc-500 uppercase tracking-widest text-xs font-bold mb-4 border-b border-zinc-800 pb-2">README.MD</h3>
+                <!-- prose class from Tailwind Typography -->
+                <div class="prose prose-invert prose-sm max-w-none prose-a:text-emerald-400 prose-headings:text-zinc-200 prose-pre:bg-zinc-950 prose-pre:border prose-pre:border-zinc-800">
+                    @Html.Raw(Model.DescriptionHtml)
                 </div>
             </div>
         </div>
 
-        <!-- Правая колонка: История версий -->
-        <div class="col-lg-4">
+        <!-- RIGHT: VERSIONS LIST -->
+        <div class="lg:col-span-1">
+            <div class="sticky top-4">
+                <div class="bg-zinc-900 border border-zinc-800 rounded p-4">
+                    <h3 class="text-emerald-500 uppercase tracking-widest text-xs font-bold mb-4 border-b border-emerald-500/20 pb-2 flex justify-between">
+                        <span>Available Files</span>
+                        <span>@Model.Profile.Installers.Count</span>
+                    </h3>
 
-            @{
-                var mainFiles = Model.Profile.Installers.Where(x => !x.IsExtra).OrderByDescending(x => x.Id).ToList();
-                var extraFiles = Model.Profile.Installers.Where(x => x.IsExtra).OrderByDescending(x => x.Id).ToList();
-            }
-
-            <!-- 1. ОСНОВНЫЕ ВЕРСИИ -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white fw-bold py-3 border-bottom-0">
-                    <i class="bi bi-clock-history me-2 text-primary"></i> Версии программы
-                </div>
-                <div class="list-group list-group-flush">
-                    @if (mainFiles.Any())
-                    {
-                        @foreach (var file in mainFiles)
-                        {
-                            <div class="list-group-item p-3 border-0 border-top hover-bg-light">
-                                <div class="d-flex w-100 justify-content-between align-items-center mb-1">
-                                    <span class="fw-bold text-dark fs-5">v @file.Version</span>
-                                    <span class="badge bg-light text-secondary border">@file.Extension.ToUpper()</span>
-                                </div>
-
-                                <!-- Комментарий -->
-                                @if (!string.IsNullOrEmpty(file.Comment))
-                                {
-                                    <div class="alert alert-light border-0 bg-light text-muted small py-2 px-3 mb-2 rounded-3">
-                                        <i class="bi bi-info-circle me-1"></i> @file.Comment
-                                    </div>
-                                }
-
-                                <div class="d-flex justify-content-between align-items-end mt-2">
-                                    <small class="text-muted">@((file.FileSize / 1024.0 / 1024.0).ToString("F2")) MB</small>
-                                    <a asp-page-handler="Download" asp-route-fileId="@file.Id" class="btn btn-sm btn-primary rounded-pill px-4 fw-bold shadow-sm">
-                                        Скачать
-                                    </a>
-                                </div>
-                            </div>
+                    <div class="space-y-3 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin">
+                        @{
+                            var allFiles = Model.Profile.Installers.OrderByDescending(x => x.Id).ToList();
                         }
-                    }
-                    else
-                    {
-                        <div class="p-4 text-center text-muted small">Нет основных версий</div>
-                    }
+                        @if (allFiles.Any())
+                        {
+                            @foreach (var file in allFiles)
+                            {
+                                <div class="group border border-zinc-800 bg-zinc-950 p-3 hover:border-emerald-500/40 transition rounded relative overflow-hidden">
+                                    @if (file.IsExtra)
+                                    {
+                                        <div class="absolute top-0 right-0 bg-zinc-800 text-[8px] text-zinc-400 px-1">EXTRA</div>
+                                    }
+
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-zinc-200 font-bold text-sm">v.@file.Version</span>
+                                        <span class="text-[9px] font-mono text-zinc-500">@file.Extension</span>
+                                    </div>
+
+                                    <div class="text-[10px] text-zinc-400 mb-2 font-mono truncate">@file.Filename</div>
+
+                                    <!-- COMMENTS BLOCK (RESTORED) -->
+                                    @if (!string.IsNullOrEmpty(file.Comment))
+                                    {
+                                        <div class="mb-2 p-1.5 bg-yellow-900/10 border border-yellow-700/30 rounded text-[10px] text-yellow-500/80 italic">
+                                            <i class="bi bi-info-circle mr-1"></i> @file.Comment
+                                        </div>
+                                    }
+
+                                    <div class="flex justify-between items-center mt-2 border-t border-zinc-800/50 pt-2">
+                                        <span class="text-[10px] text-zinc-600">@((file.FileSize / 1024.0 / 1024.0).ToString("F2")) MB</span>
+                                        <a asp-page-handler="Download" asp-route-fileId="@file.Id" class="text-emerald-500 hover:text-emerald-300 text-[10px] font-bold uppercase hover:underline">
+                                            [ DOWNLOAD ]
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-zinc-600 text-xs italic text-center py-4">NO_FILES_INDEXED</div>
+                        }
+                    </div>
                 </div>
             </div>
-
-            <!-- 2. ДОПОЛНИТЕЛЬНЫЕ ФАЙЛЫ (Показываем только если есть) -->
-            @if (extraFiles.Any())
-            {
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-warning bg-opacity-10 fw-bold py-3 border-bottom-0 text-warning-emphasis">
-                        <i class="bi bi-box-seam me-2"></i> Дополнительно / Инструменты
-                    </div>
-                    <div class="list-group list-group-flush">
-                        @foreach (var file in extraFiles)
-                        {
-                            <div class="list-group-item p-3 border-0 border-top hover-bg-light">
-                                <div class="d-flex w-100 justify-content-between align-items-center mb-1">
-                                    <span class="fw-bold text-dark">@file.Filename</span>
-                                </div>
-
-                                @if (!string.IsNullOrEmpty(file.Comment))
-                                {
-                                    <div class="text-muted small mb-2">@file.Comment</div>
-                                }
-
-                                <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <span class="badge bg-white text-muted border">v @file.Version</span>
-                                    <a asp-page-handler="Download" asp-route-fileId="@file.Id" class="btn btn-sm btn-outline-dark rounded-pill px-3">
-                                        <i class="bi bi-download me-1"></i> Скачать
-                                    </a>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
         </div>
     </div>
 </div>
 
-<style>
-    .text-pre-wrap {
-        white-space: pre-wrap;
-    }
+@section Scripts {
+    <script>
+        // JS Carousel Logic
+        let currentIndex = 0;
+        const slides = document.querySelectorAll('.carousel-slide');
+        const indicators = document.querySelectorAll('.slide-indicator');
+        const total = slides.length;
 
-    .hover-bg-light:hover {
-        background-color: #f8f9fa;
-    }
+        function changeSlide(direction) {
+            slides[currentIndex].classList.remove('opacity-100', 'z-10');
+            slides[currentIndex].classList.add('opacity-0', 'z-0');
+            if(indicators.length) indicators[currentIndex].classList.remove('bg-emerald-500');
 
-    /* Стили для Markdown контента */
-    .markdown-content {
-        line-height: 1.6;
-        font-size: 0.95rem;
-    }
+            currentIndex = (currentIndex + direction + total) % total;
 
-        /* Заголовки внутри описания не должны быть гигантскими */
-        .markdown-content h1,
-        .markdown-content h2,
-        .markdown-content h3 {
-            margin-top: 1.5rem;
-            margin-bottom: 1rem;
-            font-weight: 700;
-            color: var(--bs-heading-color);
+            slides[currentIndex].classList.remove('opacity-0', 'z-0');
+            slides[currentIndex].classList.add('opacity-100', 'z-10');
+            if(indicators.length) indicators[currentIndex].classList.add('bg-emerald-500');
         }
-
-        .markdown-content h1 {
-            font-size: 1.5rem;
-        }
-
-        .markdown-content h2 {
-            font-size: 1.3rem;
-        }
-
-        .markdown-content h3 {
-            font-size: 1.1rem;
-        }
-
-        /* Списки должны иметь отступы (Bootstrap иногда их убирает) */
-        .markdown-content ul,
-        .markdown-content ol {
-            padding-left: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        /* Ссылки */
-        .markdown-content a {
-            color: var(--primary-color);
-            text-decoration: underline;
-        }
-
-        /* Блоки кода */
-        .markdown-content pre {
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            overflow-x: auto;
-        }
-
-        /* Картинки внутри описания не должны рвать верстку */
-        .markdown-content img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin: 10px 0;
-        }
-
-    /* Темная тема для блоков кода */
-    [data-bs-theme="dark"] .markdown-content pre {
-        background-color: #2b3035;
-        color: #e9ecef;
-    }
-</style>
+    </script>
+}

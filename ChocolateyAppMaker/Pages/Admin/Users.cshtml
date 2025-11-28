@@ -1,221 +1,156 @@
 ﻿@page
 @model ChocolateyAppMaker.Pages.Admin.UsersModel
-@{ ViewData["Title"] = "Пользователи"; }
+@{
+    ViewData["Title"] = "USER_MANAGEMENT";
+}
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold"><i class="bi bi-people-fill text-primary"></i> Пользователи</h2>
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createUserModal">
-            <i class="bi bi-person-plus-fill me-2"></i> Добавить пользователя
+<div class="space-y-6">
+    <div class="flex justify-between items-center border-b border-zinc-800 pb-4">
+        <h2 class="text-xl font-bold text-emerald-500 tracking-widest"><i class="bi bi-people-fill"></i> USERS</h2>
+        <button onclick="openModal('createModal')" class="bg-emerald-900/20 text-emerald-400 border border-emerald-500/50 px-4 py-2 rounded text-xs font-bold uppercase hover:bg-emerald-500 hover:text-black transition">
+            [ ADD_USER ]
         </button>
     </div>
 
     @if (TempData["Message"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Message"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="bg-emerald-900/10 border border-emerald-500/30 text-emerald-400 px-4 py-3 rounded text-xs">
+            > @TempData["Message"]
         </div>
     }
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-4">Логин</th>
-                            <th>Роль</th>
-                            <th>Статус</th>
-                            <th class="text-end pe-4">Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var user in Model.Users)
-                        {
-                            <tr>
-                                <td class="ps-4 fw-bold">@user.UserName</td>
-                                <td>
-                                    @if (user.IsAdmin)
-                                    {
-                                        <span class="badge bg-primary"><i class="bi bi-shield-lock me-1"></i> Admin</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary"><i class="bi bi-person me-1"></i> User</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (user.IsLocked)
-                                    {
-                                        <span class="badge bg-danger">Заблокирован</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-success">Активен</span>
-                                    }
-                                </td>
-                                <td class="text-end pe-4">
-                                    @if (user.UserName != User.Identity.Name)
-                                    {
-                                        <!-- Кнопка Редактировать (Открывает модалку) -->
-                                        <!-- Передаем данные через data- атрибуты -->
-                                        <button class="btn btn-sm btn-outline-primary me-1" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#editUserModal"
-                                                data-userid="@user.Id"
-                                                data-username="@user.UserName"
-                                                data-isadmin="@user.IsAdmin.ToString().ToLower()"
-                                                data-islocked="@user.IsLocked.ToString().ToLower()"
-                                                onclick="setupEditModal(this)">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
+    <div class="bg-zinc-900 border border-zinc-800 rounded overflow-hidden">
+        <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-zinc-950 text-zinc-500 uppercase">
+                <tr>
+                    <th class="p-4">Username</th>
+                    <th class="p-4">Role</th>
+                    <th class="p-4">Status</th>
+                    <th class="p-4 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-800">
+                @foreach (var user in Model.Users)
+                {
+                    <tr class="hover:bg-zinc-800/50 transition">
+                        <td class="p-4 font-bold text-zinc-300">@user.UserName</td>
+                        <td class="p-4">
+                            @if (user.IsAdmin)
+                            {
+                                <span class="text-emerald-500 border border-emerald-500/30 px-1 rounded bg-emerald-900/10">ADMIN</span>
+                            }
+                            else
+                            {
 
-                                        <!-- Кнопка Удалить -->
-                                        <form method="post" asp-page-handler="Delete" asp-route-id="@user.Id" class="d-inline" 
-                                              onsubmit="return confirm('Вы уверены, что хотите удалить пользователя @user.UserName?');">
-                                            <button class="btn btn-sm btn-outline-danger">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small fst-italic">Текущий аккаунт</span>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                                <span class="text-zinc-500 border border-zinc-700 px-1 rounded">USER</span>
+                            }
+                        </td>
+                        <td class="p-4">
+                            @if (user.IsLocked)
+                            {
+                                <span class="text-red-500">LOCKED</span>
+                            }
+                            else
+                            {
+
+                                <span class="text-emerald-500/70">ACTIVE</span>
+                            }
+                        </td>
+                        <td class="p-4 text-right">
+                            @if (user.UserName != User.Identity.Name)
+                            {
+                                <button class="text-emerald-500 hover:text-emerald-300 mr-2"
+                                        onclick="openEdit('@user.Id', '@user.UserName', '@user.IsAdmin.ToString().ToLower()', '@user.IsLocked.ToString().ToLower()')">
+                                    [EDIT]
+                                </button>
+                                <form method="post" asp-page-handler="Delete" asp-route-id="@user.Id" class="inline" onsubmit="return confirm('CONFIRM DELETE?');">
+                                    <button class="text-red-500 hover:text-red-400">[DEL]</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="text-zinc-600 italic">CURRENT_SESSION</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 </div>
 
-<!-- 1. МОДАЛКА СОЗДАНИЯ -->
-<div class="modal fade" id="createUserModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title"><i class="bi bi-person-plus"></i> Новый пользователь</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- CREATE MODAL -->
+<div id="createModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div class="bg-zinc-900 border border-emerald-500/30 w-full max-w-md p-6 rounded shadow-[0_0_50px_rgba(16,185,129,0.1)]">
+        <h3 class="text-emerald-500 font-bold mb-4 border-b border-zinc-800 pb-2">NEW_USER_REGISTRATION</h3>
+        <form method="post" asp-page-handler="Create" class="space-y-4">
+            <div asp-validation-summary="All" class="text-red-500 text-[10px]"></div>
+            <div>
+                <label class="block text-zinc-500 text-[10px] uppercase mb-1">Login</label>
+                <input asp-for="NewUser.UserName" class="w-full bg-zinc-950 border border-zinc-700 text-zinc-200 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-0" required />
             </div>
-            <form method="post" asp-page-handler="Create">
-                <div class="modal-body">
-                    @if (!ModelState.IsValid)
-                    {
-                        <div class="alert alert-danger small">
-                            <div asp-validation-summary="All" class="mb-0"></div>
-                        </div>
-                    }
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Логин</label>
-                        <input asp-for="NewUser.UserName" class="form-control" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Пароль</label>
-                        <input asp-for="NewUser.Password" type="password" class="form-control" required />
-                    </div>
-                    <div class="form-check">
-                        <input asp-for="NewUser.IsAdmin" class="form-check-input" type="checkbox" id="createIsAdmin" />
-                        <label class="form-check-label" for="createIsAdmin">
-                            Права администратора
-                        </label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-success">Создать</button>
-                </div>
-            </form>
-        </div>
+            <div>
+                <label class="block text-zinc-500 text-[10px] uppercase mb-1">Password</label>
+                <input asp-for="NewUser.Password" type="password" class="w-full bg-zinc-950 border border-zinc-700 text-zinc-200 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-0" required />
+            </div>
+            <div class="flex items-center gap-2">
+                <input asp-for="NewUser.IsAdmin" type="checkbox" class="bg-zinc-950 border-zinc-700 text-emerald-500 focus:ring-0 rounded" />
+                <label class="text-zinc-400 text-xs">Grant Administrator Privileges</label>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="closeModal('createModal')" class="text-zinc-500 text-xs hover:text-zinc-300">CANCEL</button>
+                <button type="submit" class="bg-emerald-900/20 text-emerald-400 border border-emerald-500/50 px-4 py-2 rounded text-xs font-bold uppercase hover:bg-emerald-500 hover:text-black">CREATE</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- 2. МОДАЛКА РЕДАКТИРОВАНИЯ -->
-<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Редактирование: <span id="editUserNameDisplay"></span></h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="post" asp-page-handler="Edit">
-                <input type="hidden" asp-for="EditUser.Id" id="editUserId" />
-                
-                <div class="modal-body">
-                    <!-- Роль -->
-                    <div class="card mb-3 bg-light border-0">
-                        <div class="card-body">
-                            <h6 class="card-title fw-bold mb-2">Роль в системе</h6>
-                            <div class="form-check form-switch">
-                                <input asp-for="EditUser.IsAdmin" class="form-check-input" type="checkbox" id="editIsAdmin" />
-                                <label class="form-check-label" for="editIsAdmin">
-                                    Является администратором
-                                </label>
-                            </div>
-                        </div>
-                    </div>
+<!-- EDIT MODAL -->
+<div id="editModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div class="bg-zinc-900 border border-zinc-700 w-full max-w-md p-6 rounded">
+        <h3 class="text-emerald-500 font-bold mb-4 border-b border-zinc-800 pb-2">EDIT_USER: <span id="editNameDisplay" class="text-white"></span></h3>
+        <form method="post" asp-page-handler="Edit" class="space-y-4">
+            <input type="hidden" asp-for="EditUser.Id" id="editUserId" />
 
-                    <!-- Блокировка -->
-                    <div class="card border-danger">
-                        <div class="card-body">
-                            <h6 class="card-title fw-bold text-danger mb-2">Блокировка доступа</h6>
-                            <div class="form-check form-switch">
-                                <input asp-for="EditUser.IsLocked" class="form-check-input" type="checkbox" id="editIsLocked" />
-                                <label class="form-check-label" for="editIsLocked">
-                                    Учетная запись заблокирована
-                                </label>
-                            </div>
-                            <div class="form-text text-muted small">
-                                Заблокированный пользователь не сможет войти в систему.
-                            </div>
-                        </div>
-                    </div>
+            <div class="bg-zinc-950 p-3 border border-zinc-800 rounded">
+                <div class="flex items-center gap-2">
+                    <input asp-for="EditUser.IsAdmin" type="checkbox" id="editIsAdmin" class="bg-zinc-900 border-zinc-700 text-emerald-500 focus:ring-0 rounded" />
+                    <label for="editIsAdmin" class="text-zinc-300 text-xs font-bold">Administrator</label>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+            </div>
+
+            <div class="bg-red-900/10 p-3 border border-red-900/30 rounded">
+                <div class="flex items-center gap-2">
+                    <input asp-for="EditUser.IsLocked" type="checkbox" id="editIsLocked" class="bg-zinc-900 border-red-900 text-red-500 focus:ring-0 rounded" />
+                    <label for="editIsLocked" class="text-red-400 text-xs font-bold">Account Locked</label>
                 </div>
-            </form>
-        </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="closeModal('editModal')" class="text-zinc-500 text-xs hover:text-zinc-300">CANCEL</button>
+                <button type="submit" class="bg-zinc-800 text-zinc-200 border border-zinc-600 px-4 py-2 rounded text-xs font-bold uppercase hover:bg-white hover:text-black">SAVE_CHANGES</button>
+            </div>
+        </form>
     </div>
 </div>
 
 @section Scripts {
-<script>
-    // Функция для передачи данных из кнопки в модалку
-    function setupEditModal(button) {
-        // Читаем data-атрибуты нажатой кнопки
-        const id = button.getAttribute('data-userid');
-        const name = button.getAttribute('data-username');
-        const isAdmin = button.getAttribute('data-isadmin') === 'true';
-        const isLocked = button.getAttribute('data-islocked') === 'true';
+    <script>
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-        // Заполняем поля в модалке
-        document.getElementById('editUserId').value = id;
-        document.getElementById('editUserNameDisplay').textContent = name;
-        document.getElementById('editIsAdmin').checked = isAdmin;
-        document.getElementById('editIsLocked').checked = isLocked;
-    }
+        function openEdit(id, name, isAdmin, isLocked) {
+            document.getElementById('editUserId').value = id;
+            document.getElementById('editNameDisplay').innerText = name;
+            document.getElementById('editIsAdmin').checked = (isAdmin === 'true');
+            document.getElementById('editIsLocked').checked = (isLocked === 'true');
+            openModal('editModal');
+        }
 
-    document.addEventListener("DOMContentLoaded", function() {
-        // Если сервер сказал, что была ошибка при создании
+        // Auto-open on error (using Razor logic injection)
         @if (ViewData["ShowCreateModal"] as bool? == true)
         {
-            <text>
-            var myModal = new bootstrap.Modal(document.getElementById('createUserModal'));
-            myModal.show();
-            </text>
+            <text>openModal('createModal');</text>
         }
-    });
-</script>
+    </script>
 }

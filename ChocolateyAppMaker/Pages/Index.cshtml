@@ -1,148 +1,84 @@
 ﻿@page
 @model IndexModel
-@{
-    ViewData["Title"] = "Управление программами";
-}
+@{ ViewData["Title"] = "ADMIN_PACKAGES"; }
 
-<div class="container py-4">
-    <!-- Шапка + Поиск -->
-    <div class="row align-items-center mb-4 g-3">
-        <div class="col-md-4">
-            <h1 class="h3 mb-0"><i class="bi bi-gear-wide-connected"></i> Администрирование</h1>
-        </div>
-
-        <!-- БЛОК ПОИСКА -->
-        <div class="col-md-5">
-            <form method="get" class="d-flex">
-                <div class="input-group">
-                    <!-- ИСПРАВЛЕНИЕ 1: Убрал bg-white, добавил bg-body-tertiary -->
-                    <span class="input-group-text bg-body-tertiary border-end-0"><i class="bi bi-search"></i></span>
-                    <input type="text" name="SearchTerm" value="@Model.SearchTerm"
-                           class="form-control border-start-0 ps-0"
-                           placeholder="Поиск по названию, ID или тегу..." />
-                    <button class="btn btn-outline-primary" type="submit">Найти</button>
-                </div>
-                @if (!string.IsNullOrEmpty(Model.SearchTerm))
-                {
-                    <a asp-page="./Index" class="btn btn-link text-danger ms-2" title="Сбросить"><i class="bi bi-x-lg"></i></a>
-                }
-            </form>
-        </div>
-
-        <div class="col-md-3 text-md-end">
-            <a asp-page="/Scan" class="btn btn-primary w-100"><i class="bi bi-folder2-open me-2"></i> Сканировать</a>
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-zinc-800 pb-4">
+        <h2 class="text-xl font-bold text-emerald-500 tracking-widest flex items-center gap-2">
+            <i class="bi bi-database-gear"></i> PACKAGE_MANAGEMENT
+        </h2>
+        <div class="flex gap-3 w-full md:w-auto">
+             <form method="get" class="flex-1 md:w-80 flex items-center bg-zinc-900 border border-zinc-700 rounded">
+                 <input type="text" name="SearchTerm" value="@Model.SearchTerm" placeholder="Find package..." class="bg-transparent border-none text-xs text-zinc-300 w-full focus:ring-0 px-3 py-2" />
+                 <button type="submit" class="px-3 text-zinc-500 hover:text-emerald-400"><i class="bi bi-search"></i></button>
+             </form>
+             <a asp-page="/Scan" class="bg-emerald-900/20 text-emerald-400 border border-emerald-500/50 px-4 py-2 rounded text-xs font-bold uppercase hover:bg-emerald-500 hover:text-black transition flex items-center gap-2">
+                 <i class="bi bi-plus-lg"></i> Scan New
+             </a>
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
-        <!-- ИСПРАВЛЕНИЕ 2: bg-light -> bg-body-tertiary (Адаптивный фон шапки) -->
-        <div class="card-header bg-body-tertiary d-flex justify-content-between align-items-center">
-            <span class="text-muted small text-uppercase fw-bold">Список пакетов</span>
-            <span class="badge bg-secondary">Всего: @Model.Profiles.TotalCount</span>
-        </div>
-        <div class="card-body p-0">
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-0">
+    <div class="border border-zinc-800 rounded bg-zinc-900/50 overflow-hidden">
+        <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-zinc-950 text-zinc-500 uppercase tracking-wider border-b border-zinc-800">
+                <tr>
+                    <th class="p-4">App Name</th>
+                    <th class="p-4 hidden md:table-cell">ID</th>
+                    <th class="p-4">Ver</th>
+                    <th class="p-4 hidden sm:table-cell">Tags</th>
+                    <th class="p-4 text-right">View</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-800">
                 @foreach (var item in Model.Profiles.Items)
                 {
-                    <div class="col border-end border-bottom border-secondary border-opacity-10">
-                        <!-- Класс для ховера -->
-                        <div class="p-3 h-100 d-flex flex-column position-relative hover-adaptive group-hover-trigger">
-                            <div class="d-flex align-items-start mb-2">
-                                <!-- Иконка с адаптивным фоном -->
-                                <img src="@item.DisplayIconUrl" class="rounded me-3 bg-body-secondary shadow-sm p-1"
-                                     style="width: 48px; height: 48px; object-fit: contain;"
-                                     onerror="this.src='/images/no-icon.svg'" />
-                                <div class="overflow-hidden">
-                                    <h6 class="mb-1 fw-bold text-truncate" title="@item.Name">@item.Name</h6>
-                                    <small class="text-muted d-block text-truncate font-monospace" style="font-size: 0.75rem;">
-                                        @(item.ChocolateyId ?? "no-id")
-                                    </small>
+                    // Клик по строке ведет в Редактор (Details)
+                    <tr class="hover:bg-zinc-800/50 transition group cursor-pointer" onclick="location.href='/Details/@item.Id'">
+                        <td class="p-4">
+                            <div class="flex items-center gap-3">
+                                <!-- Цветной лого без затемнения -->
+                                <img src="@item.DisplayIconUrl" class="w-8 h-8 object-contain" onerror="this.src='/images/no-icon.svg'" />
+                                <div>
+                                    <div class="text-zinc-200 font-bold group-hover:text-emerald-400 transition">@item.Name</div>
+                                    <div class="md:hidden text-[9px] text-zinc-500">@item.ChocolateyId</div>
                                 </div>
                             </div>
-
-                            <!-- БЛОК ТЕГОВ -->
-                            <div class="mb-2" style="min-height: 24px;">
-                                @if (!string.IsNullOrEmpty(item.Tags))
-                                {
-                                    foreach (var tag in item.Tags.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries).Take(3))
-                                    {
-                                        // ИСПРАВЛЕНИЕ: bg-light -> bg-secondary bg-opacity-10 (полупрозрачный фон)
-                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-opacity-10 fw-normal me-1" style="font-size: 0.65rem;">@tag</span>
+                        </td>
+                        <td class="p-4 text-zinc-500 hidden md:table-cell">@(item.ChocolateyId ?? "-")</td>
+                        <td class="p-4 text-zinc-400">@item.Installers.Count</td>
+                        <td class="p-4 hidden sm:table-cell">
+                            <div class="flex gap-1 flex-wrap">
+                                @if(!string.IsNullOrEmpty(item.Tags)){
+                                    foreach(var t in item.Tags.Split(' ').Take(2)){
+                                        <span class="bg-zinc-900 border border-zinc-700 text-zinc-500 px-1.5 rounded-[2px] text-[10px]">@t</span>
                                     }
                                 }
                             </div>
-
-                            <div class="mt-auto d-flex justify-content-between align-items-center">
-                                <span class="small text-muted">
-                                    <i class="bi bi-hdd-stack"></i> @item.Installers.Count версий
-                                </span>
-                                <a asp-page="/Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary stretched-link py-0">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                        </td>
+                        <td class="p-4 text-right">
+                            <!-- Кнопка "Глаз" для перехода в Магазин. stopPropagation нужен, чтобы не сработал клик по строке -->
+                            <a href="/Store/Details/@item.Id" onclick="event.stopPropagation()" class="text-zinc-500 hover:text-emerald-400 transition border border-zinc-700 hover:border-emerald-500/50 p-1.5 rounded bg-zinc-950 inline-block" title="View in Store">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
                 }
-            </div>
-
-            @if (Model.Profiles.TotalCount == 0)
-            {
-                <div class="text-center py-5">
-                    <p class="text-muted">Ничего не найдено по запросу "@Model.SearchTerm"</p>
-                    <a asp-page="./Index" class="btn btn-sm btn-outline-secondary">Сбросить фильтр</a>
-                </div>
-            }
-        </div>
+            </tbody>
+        </table>
+        
+        @if (Model.Profiles.TotalCount == 0)
+        {
+            <div class="p-8 text-center text-zinc-600">DATA_EMPTY</div>
+        }
     </div>
-
+    
+    <!-- Pagination same as before -->
     @if (Model.Profiles.TotalPages > 1)
     {
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center">
-                <li class="page-item @(!Model.Profiles.HasPreviousPage ? "disabled" : "")">
-                    <a class="page-link" asp-page="./Index"
-                       asp-route-p="@(Model.Profiles.PageIndex - 1)"
-                       asp-route-SearchTerm="@Model.SearchTerm">Назад</a>
-                </li>
-
-                @for (int i = 1; i <= Model.Profiles.TotalPages; i++)
-                {
-                    if (i == 1 || i == Model.Profiles.TotalPages || Math.Abs(Model.Profiles.PageIndex - i) < 3)
-                    {
-                        <li class="page-item @(i == Model.Profiles.PageIndex ? "active" : "")">
-                            <a class="page-link" asp-page="./Index"
-                               asp-route-p="@i"
-                               asp-route-SearchTerm="@Model.SearchTerm">@i</a>
-                        </li>
-                    }
-                }
-
-                <li class="page-item @(!Model.Profiles.HasNextPage ? "disabled" : "")">
-                    <a class="page-link" asp-page="./Index"
-                       asp-route-p="@(Model.Profiles.PageIndex + 1)"
-                       asp-route-SearchTerm="@Model.SearchTerm">Вперед</a>
-                </li>
-            </ul>
-        </nav>
+        <div class="flex justify-center gap-2">
+             <a asp-page="./Index" asp-route-p="@(Model.Profiles.PageIndex - 1)" asp-route-SearchTerm="@Model.SearchTerm" class="px-3 py-1 border border-zinc-800 text-zinc-500 text-xs @(!Model.Profiles.HasPreviousPage ? "opacity-30 pointer-events-none" : "")">&lt; PREV</a>
+             <span class="px-3 py-1 text-zinc-300 text-xs">@Model.Profiles.PageIndex</span>
+             <a asp-page="./Index" asp-route-p="@(Model.Profiles.PageIndex + 1)" asp-route-SearchTerm="@Model.SearchTerm" class="px-3 py-1 border border-zinc-800 text-zinc-500 text-xs @(!Model.Profiles.HasNextPage ? "opacity-30 pointer-events-none" : "")">NEXT &gt;</a>
+        </div>
     }
 </div>
-
-<style>
-    /*
-           ИСПРАВЛЕНИЕ 3: Адаптивный CSS для наведения.
-           Вместо жесткого цвета мы используем RGBA с малым значением прозрачности.
-           --bs-body-color-rgb - это переменная Bootstrap:
-             - в светлой теме она (0, 0, 0) -> черный -> 5% черного = светло-серый
-             - в темной теме она (255, 255, 255) -> белый -> 5% белого = чуть светлее фона
-        */
-    .hover-adaptive:hover {
-        background-color: rgba(var(--bs-body-color-rgb), 0.05);
-        transition: background-color 0.2s ease;
-    }
-
-    /* Доп фикс для границ в темной теме, чтобы не сливались */
-    [data-bs-theme="dark"] .border-end,
-    [data-bs-theme="dark"] .border-bottom {
-        border-color: rgba(255,255,255, 0.1) !important;
-    }
-</style>
